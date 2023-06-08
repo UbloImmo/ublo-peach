@@ -10,7 +10,6 @@ from langchain.prompts import (
 )
 from app.memory import new_memory
 from app.utils import *
-from streamlit_chat import message
 # ----- e chart option
 from streamlit_echarts import st_echarts
 # Demo here: https://echarts.streamlit.app/
@@ -24,8 +23,8 @@ from streamlit_extras.let_it_rain import rain
 # ----- LLM config
 if "query_input" not in st.session_state:
     st.session_state.query_input = ""
-if "responses" not in st.session_state:
-    st.session_state.responses = []
+if "response" not in st.session_state:
+    st.session_state.response = ""
 if "requests" not in st.session_state:
     st.session_state["requests"] = []
 if "buffer_memory" not in st.session_state:
@@ -144,7 +143,6 @@ with st.sidebar:
     st.title("I am your PAIDA, Personnal AI Data Analyst.")
     st.subheader("You can ask me any statistics you would like to get from your data.")
     st.write("I was created by true princesses : The Peaches :peach:")
-    st.write("---")
     st.header("You ask :")
     recorded_prompt1 = st.button("Quand se termine le contrat de l'appartement 22 Avenue des Lilas ?")
     recorded_prompt2 = st.button("Quel est mon taux de vacance aujourd’hui ?")
@@ -156,18 +154,18 @@ with response_container:
         st.session_state.query_input = "What is the end date date associated with the apartment at 22 Avenue des Lilas ?"
         with st.spinner():
             response = conversation.predict(
-                input=f"Query:\n{st.session_state.query_input}, Format answer accordingly: \n A set of two number separated by a coma"
+                input=f"Query:\n{st.session_state.query_input}"
             )
-            st.session_state.responses = response
-            st.title(st.session_state.responses)
+            st.session_state.response = response
+            st.title(st.session_state.response)
     if recorded_prompt2:
         st.session_state.query_input = "How many appartments are occupied and unoccupied, answer simply with just a table."
         with st.spinner():
             response = conversation.predict(
                 input=f"Query:\n{st.session_state.query_input}"
             )
-            st.session_state.responses = response
-            st.title(st.session_state.responses)
+            st.session_state.response = response
+            st.title(st.session_state.response)
     if asked_question:
         st.pydeck_chart(pdk.Deck(
             map_style=None,
