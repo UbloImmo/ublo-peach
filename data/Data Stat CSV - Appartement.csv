@@ -1,4 +1,4 @@
-id_appartement,nom_appartement,adresse-appartement,loyer ,retard_de_paiement 
+id_appartement,nom_appartement,adresse_appartement,loyer ,retard_de_paiement
 APT001,Appartement Harmonie,"10 Rue du Château, Paris",1057,729
 APT002,Résidence Serenity,"22 Avenue des Lilas, Lyon",1276,182
 APT003,Studio Élégance,"15 Rue de la Gare, Marseille",1814,555
