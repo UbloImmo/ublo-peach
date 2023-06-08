@@ -1,0 +1,51 @@
+id_appartement,nom_appartement,adresse-appartement,loyer ,retard_de_paiement 
+APT001,Appartement Harmonie,"10 Rue du Château, Paris",1057,729
+APT002,Résidence Serenity,"22 Avenue des Lilas, Lyon",1276,182
+APT003,Studio Élégance,"15 Rue de la Gare, Marseille",1814,555
+APT004,Loft Oasis,"8 Place de la Liberté, Toulouse",1987,960
+APT005,Appartement Cosmopolite,"45 Rue de la République, Bordeaux",589,276
+APT006,Résidence Enchantée,"5 Boulevard Saint-Michel, Nantes",1569,872
+APT007,Studio Urbain,"12 Rue de la Paix, Lille",1261,623
+APT008,Loft Lumière,"18 Avenue Victor Hugo, Strasbourg",932,104
+APT009,Appartement Tranquillité,"30 Rue des Fleurs, Rennes",1098,838
+APT010,Résidence Belle Vue,"25 Rue du Commerce, Montpellier",1712,437
+APT011,Studio Moderne,"7 Rue du Pont, Nice",1725,932
+APT012,Loft Prestige,"14 Rue de la Mairie, Aix-en-Provence",831,675
+APT013,Appartement Charme,"3 Place de l'Église, Grenoble",1398,286
+APT014,Résidence Panorama,"9 Rue des Roses, Dijon",1234,516
+APT015,Studio Douceur,"17 Avenue de la Plage, Saint-Tropez",1823,869
+APT016,Loft Chic,"20 Rue des Champs, Cannes",567,213
+APT017,Appartement Sérénité,"35 Rue du Vieux Port, Marseille",1185,771
+APT018,Résidence Paradis,"2 Boulevard Saint-Germain, Paris",1976,381
+APT019,Studio Cozy,"6 Place du Marché, Lyon",967,598
+APT020,Loft Artistique,"11 Rue de la Cathédrale, Toulouse",742,139
+APT021,Appartement Oasis,"16 Rue du Palais, Bordeaux",1934,979
+APT022,Résidence Elysée,"40 Rue de la Liberté, Nantes",872,428
+APT023,Studio Privilège,"4 Avenue de la Mer, Nice",1456,764
+APT024,Loft Zen,"13 Rue de la Fontaine, Lille",655,357
+APT025,Appartement Vintage,"19 Rue de la Gare, Strasbourg",1397,637
+APT026,Résidence Magique,"28 Rue des Acacias, Rennes",1206,175
+APT027,Studio Exclusif,"23 Rue du Soleil, Montpellier",1672,830
+APT028,Loft Contemporain,"8 Rue du Port, Aix-en-Provence",1911,547
+APT029,Appartement Tranquille,"15 Place de la Victoire, Grenoble",828,912
+APT030,Résidence Luxuria,"21 Rue de la Liberté, Dijon",1854,467
+APT031,Studio Harmonie,"32 Avenue du Port, Saint-Tropez",503,825
+APT032,Loft Élégance,"37 Rue des Palmiers, Cannes",1376,186
+APT033,Appartement Ciel,"9 Rue de la Tour, Marseille",1168,694
+APT034,Résidence Prestige,"12 Boulevard Haussmann, Paris",1711,394
+APT035,Studio Atmosphère,"27 Place Bellecour, Lyon",986,758
+APT036,Loft Enchanté,"5 Rue de la Plaine, Toulouse",602,266
+APT037,Appartement Plénitude,"14 Rue du Marché, Bordeaux",1876,597
+APT038,Résidence Harmonia,"38 Avenue Foch, Nantes",1287,949
+APT039,Studio Lumière,"3 Boulevard des Anglais, Nice",954,141
+APT040,Loft Magnifique,"18 Rue de la Bourse, Lille",1652,650
+APT041,Appartement Charmant,"25 Rue du Rhin, Strasbourg",789,328
+APT042,Résidence Opulence,"29 Rue du Parc, Rennes",1143,752
+APT043,Studio Oasis,"10 Rue de la Mer, Montpellier",1768,581
+APT044,Loft Tranquille,"7 Rue du Soleil, Aix-en-Provence",651,949
+APT045,Appartement Privilège,"16 Rue de la Paix, Grenoble",1479,282
+APT046,Résidence Majesté,"22 Rue des Églises, Dijon",1998,775
+APT047,Studio Cosy,"35 Avenue des Plages, Saint-Tropez",873,104
+APT048,Loft Panorama,"40 Boulevard de la Croisette, Cannes",1034,668
+APT049,Appartement Elysium,"11 Rue du Port, Marseille",1365,364
+APT050,Résidence Éclat,"6 Rue du Louvre, Paris",1661,718
