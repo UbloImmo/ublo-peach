@@ -9,20 +9,23 @@ from langchain.prompts import (
     MessagesPlaceholder,
 )
 from app.memory import new_memory
+from app.utils import *
+from streamlit_chat import message
 # ----- e chart option
 from streamlit_echarts import st_echarts
 # Demo here: https://echarts.streamlit.app/
 # ----- Map import
 import pandas as pd
 import numpy as np
+import pydeck as pdk
 # ---- Emoji rain import
 from streamlit_extras.let_it_rain import rain
 
-st.set_page_config(page_title="Peaches App", page_icon=":peach:", layout="wide")
-
 # ----- LLM config
+if "query_input" not in st.session_state:
+    st.session_state.query_input = ""
 if "responses" not in st.session_state:
-    st.session_state.responses = ["How can I assist you?"]
+    st.session_state.responses = []
 if "requests" not in st.session_state:
     st.session_state["requests"] = []
 if "buffer_memory" not in st.session_state:
@@ -32,7 +35,42 @@ if "model" not in st.session_state:
 if "top_k" not in st.session_state:
     st.session_state.top_k = 2
 if "system_message" not in st.session_state:
-    st.session_state.system_message = "Answer the question as truthfully as possible using the provided context, and if the answer is not contained within the text below, say 'I don't know'"
+    st.session_state.system_message = """Answer the question as truthfully as possible using the provided context, and if the answer is not contained within the text below, say 'I don't know'
+
+    Here is a dataset about the locations :
+    | id_appartment | date_entree | date_sortie |
+    |----------------|--------------|--------------|
+    | APT001 | 05/01/2022 | 15/02/2022 |
+    | APT002 | 10/03/2022 | 20/04/2022 |
+    | APT003 | 02/06/2022 | 30/06/2022 |
+    | APT004 | 17/08/2022 | 25/09/2022 |
+    | APT005 | 08/10/2022 | 12/11/2022 |
+    | APT006 | 02/01/2023 | 20/02/2023 |
+    | APT007 | 15/03/2023 | 30/04/2023 |
+    | APT008 | 10/05/2023 | 18/06/2023 |
+    | APT009 | 01/07/2023 | 10/08/2023 |
+    | APT010 | 05/09/2023 | 22/10/2023 |
+    | APT011 | 15/11/2023 | 31/12/2023 |
+    | APT012 | 08/02/2024 | 25/03/2024 |
+
+    Here is a dataset about the appartements :
+    | id_appartment | appartment_name | appartment_address | rent | payment_delay | status |
+    |---------------|--------------------|--------------------|------|---------------|
+    | APT001 | Appartement Harmonie | 10 Rue du Château | 1057 | 729 | occupied |
+    | APT002 | Résidence Serenity | 22 Avenue des Lilas | 1276 | 182 | unoccupied |
+    | APT003 | Studio Élégance | 15 Rue de la Gare | 1814 | 555 | unoccupied |
+    | APT004 | Cozy Haven | 5 Park Lane | 950 | 390 | occupied |
+    | APT005 | Tranquil Retreat | 8 Meadow Street | 1320 | 920 | occupied |
+
+    You can link this  two databases thanks to 'id_appartment".
+
+    Here is a dataset about the tenants :
+    | id_appartment | id_tenants|tenant_name | age | gender| family situation |
+    |---------------|--------------------|--------------------|------|---------------|
+    | APT001 | T001 | Pierre | 57 | man | married |
+    | APT002 | T002|Paul | 22 | man | single |
+    | APT003 | T003|Marie | 45 | woman | married |
+    """
 
 llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
@@ -55,7 +93,7 @@ conversation = ConversationChain(
 response_container = st.container()
 
 # ----- Pie
-options = {
+options_pie = {
     "tooltip": {"trigger": "item"},
     "legend": {"top": "5%", "left": "center"},
     "series": [
@@ -83,15 +121,22 @@ options = {
 }
 
 # ----- Basic table
+option_table = np.random.randn(10, 2)
 data_table = pd.DataFrame(
-   np.random.randn(10, 2),
+   option_table,
    columns=['Référence lot', 'Adresse lot'])
 
 # ----- Map with dot
+option_map = np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4]
 data_map = pd.DataFrame(
-    np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4],
+    option_map,
     columns=['LAT', 'LON'])
 
+# ----- 3D Map with heat
+option_3d_map = np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4]
+data_3d_map = pd.DataFrame(
+   option_3d_map,
+   columns=['lat', 'lon'])
 
 
 # ----- Header ------
@@ -101,17 +146,60 @@ with st.sidebar:
     st.write("I was created by true princesses : The Peaches :peach:")
     st.write("---")
     st.header("You ask :")
-    asked_question1 = st.button("Quel est mon taux de vacance aujourd’hui ?")
-    asked_question2 = st.button("Peux-tu me vendre du rêve ?")
+    recorded_prompt1 = st.button("Quand se termine le contrat de l'appartement 22 Avenue des Lilas ?")
+    recorded_prompt2 = st.button("Quel est mon taux de vacance aujourd’hui ?")
+    asked_question = st.button("Peux-tu me vendre du rêve ?")
 
 # ----- Graph ------
 with response_container:
-    if asked_question1:
-        st.header("I deliver :")
-        st_echarts(options=options, height="500px")
+    if recorded_prompt1:
+        st.session_state.query_input = "What is the end date date associated with the apartment at 22 Avenue des Lilas ?"
+        with st.spinner():
+            response = conversation.predict(
+                input=f"Query:\n{st.session_state.query_input}, Format answer accordingly: \n A set of two number separated by a coma"
+            )
+            st.session_state.responses = response
+            st.title(st.session_state.responses)
+    if recorded_prompt2:
+        st.session_state.query_input = "How many appartments are occupied and unoccupied, answer simply with just a table."
+        with st.spinner():
+            response = conversation.predict(
+                input=f"Query:\n{st.session_state.query_input}"
+            )
+            st.session_state.responses = response
+            st.title(st.session_state.responses)
+    if asked_question:
+        st.pydeck_chart(pdk.Deck(
+            map_style=None,
+            initial_view_state=pdk.ViewState(
+                latitude=37.76,
+                longitude=-122.4,
+                zoom=11,
+                pitch=50,
+            ),
+            layers=[
+                pdk.Layer(
+                'HexagonLayer',
+                data=data_3d_map,
+                get_position='[lon, lat]',
+                radius=200,
+                elevation_scale=4,
+                elevation_range=[0, 1000],
+                pickable=True,
+                extruded=True,
+                ),
+                pdk.Layer(
+                    'ScatterplotLayer',
+                    data=data_3d_map,
+                    get_position='[lon, lat]',
+                    get_color='[200, 30, 0, 160]',
+                    get_radius=200,
+                ),
+            ],
+        ))
+        st_echarts(options=options_pie, height="500px")
         st.table(data_table)
         st.map(data_map)
-    if asked_question2:
         rain(
             emoji="🍑",
             font_size=80,
