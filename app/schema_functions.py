@@ -28,8 +28,8 @@ def print_db_schema(db_name, conn, st):
         st.write()
 
 def get_table_db_schema(db_name, conn):
-    # Dictionary to store table-column relationships
-    table_map = {}
+    # List to store table-column relationships
+    table_list = []
 
     # Get a list of all tables
     tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
@@ -43,8 +43,17 @@ def get_table_db_schema(db_name, conn):
         # Get column names from the returned tuples (name is the second element in the tuple)
         column_names = [column[1] for column in columns]
 
-        # Map table to its columns
-        table_map[table] = column_names
+        # Map table to its columns as a dictionary
+        table_data = {
+            "table": table,
+            "columns": column_names
+        }
 
-    # return table_map
-    return json.dumps(table_map)
+        # Add the table data to the list
+        table_list.append(table_data)
+
+    return table_list
+
+
+
+

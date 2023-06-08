@@ -13,6 +13,7 @@ from app.utils import *
 from app.csv_loaders import load_csv_to_sqlite
 from app.schema_functions import print_db_schema
 from app.schema_functions import get_table_db_schema
+import re
 
 
 ############## DB PART BEGINNING #########################
@@ -28,7 +29,7 @@ if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
 # DB Mgmt
-import sqlite3 
+import sqlite3
 # conn = sqlite3.connect('data/world.sqlite')
 load_csv_to_sqlite('data/DATA2_Appartement.csv', 'appartement')
 conn = load_csv_to_sqlite('data/DATA2_Location.csv', 'location')
@@ -52,7 +53,7 @@ c = conn.cursor()
 def sql_executor(raw_code):
 	c.execute(raw_code)
 	data = c.fetchall()
-	return data 
+	return data
 
 
 city = ['ID,', 'Name,', 'CountryCode,', 'District,', 'Population']
@@ -64,7 +65,7 @@ countrylanguage = ['CountryCode,', 'Language,', 'IsOfficial,', 'Percentage']
 st.subheader("Langchain playground")
 
 if "responses" not in st.session_state:
-    st.session_state.responses = ["How can I assist you?"]
+    st.session_state.responses = ["Ublo sait tout !"]
 if "requests" not in st.session_state:
     st.session_state["requests"] = []
 if "buffer_memory" not in st.session_state:
@@ -94,9 +95,27 @@ with st.sidebar:
     )
     system_message = st.text_area("System Message", key="system_message", height=600)
 
-llm = ChatOpenAI(model_name=model_select_value)
+llm = ChatOpenAI(model_name=model_select_value) # type: ignore
 
-system_msg_template = SystemMessagePromptTemplate.from_template(template=system_message)
+table_data = get_table_db_schema('data/demo.db', conn)
+formatted_string = "\n\n".join([
+    f"Table: {item['table']}\ncolumns: {', '.join(item['columns'])}"
+    for item in table_data
+])
+st.write(formatted_string)
+
+templateSystem=f"""
+    You're a SQL developer able to generate all sql queries based only on this table, you should only send sql queries when possible, otherwise send null as message in all other cases.
+    You must enclose your sql script in a span tag
+    {formatted_string}
+"""
+
+
+# Générer la représentation en chaîne de caractères
+
+
+
+system_msg_template = SystemMessagePromptTemplate.from_template(template=templateSystem)
 
 human_msg_template = HumanMessagePromptTemplate.from_template(template="{input}")
 
@@ -121,21 +140,26 @@ with text_container:
     if query:
         with st.spinner("typing..."):
             conversation_string = get_conversation_string()
-            # st.code(conversation_string)
             response = conversation.predict(
                 input=f"Query:\n{query}"
             )
+
+            result = re.search('<span>(.*?)</span>', response)
+            if result:
+                query_results = sql_executor(result.group(1))
+                st.write(query_results)
+
         st.session_state.requests.append(query)
         st.session_state.responses.append(response)
 
-with response_container:
-    if st.session_state["responses"]:
-        for i in range(len(st.session_state["responses"])):
-            message(st.session_state["responses"][i], key=str(i))
-            if i < len(st.session_state["requests"]):
-                message(
-                    st.session_state["requests"][i], is_user=True, key=str(i) + "_user"
-                )
+# with response_container:
+#     if st.session_state["responses"]:
+#         for i in range(len(st.session_state["responses"])):
+#             message(st.session_state["responses"][i], key=str(i))
+#             if i < len(st.session_state["requests"]):
+#                 message(
+#                     st.session_state["requests"][i], is_user=True, key=str(i) + "_user"
+#                 )
 
 with query_explorer_container:
     st.subheader("HomePage")
@@ -155,15 +179,15 @@ with query_explorer_container:
         table_info = {'city':city,'country':country,'countrylanguage':countrylanguage}
         st.json(get_table_db_schema('data/demo.db', conn))
         # st.json(table_info)
-        
-        
+
+
     # Results Layouts
     with col2:
         if submit_code:
             st.info("Query Submitted")
             st.code(raw_code)
 
-            # Results 
+            # Results
             query_results = sql_executor(raw_code)
             with st.expander("Results"):
                 st.write(query_results)
@@ -171,3 +195,6 @@ with query_explorer_container:
             with st.expander("Pretty Table"):
                 query_df = pd.DataFrame(query_results)
                 st.dataframe(query_df)
+
+                # nombre total d'appartement
+                # l'adresse de l'appartement avec le loyer le plus élevé
