@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import re
 # ----- LLM
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
@@ -21,11 +22,28 @@ import pydeck as pdk
 # ---- Emoji rain import
 from streamlit_extras.let_it_rain import rain
 
+# from app
+from app.csv_loaders import load_csv_to_sqlite
+from app.schema_functions import print_db_schema
+from app.schema_functions import get_table_db_schema
+
+load_csv_to_sqlite('data/DATA2_Appartement.csv', 'appartement')
+conn = load_csv_to_sqlite('data/DATA2_Location.csv', 'location')
+c = conn.cursor()
+
+table_data = get_table_db_schema('data/demo.db', conn)
+formatted_string = "\n\n".join([
+    f"Table: {item['table']}\ncolumns: {', '.join(item['columns'])}"
+    for item in table_data
+])
+
 # ----- LLM config
 if "query_input" not in st.session_state:
     st.session_state.query_input = ""
 if "response" not in st.session_state:
     st.session_state.response = ""
+if "responses" not in st.session_state:
+    st.session_state.responses = ""
 if "requests" not in st.session_state:
     st.session_state["requests"] = []
 if "buffer_memory" not in st.session_state:
@@ -35,63 +53,13 @@ if "model" not in st.session_state:
 if "top_k" not in st.session_state:
     st.session_state.top_k = 2
 if "system_message" not in st.session_state:
-    st.session_state.system_message = """Answer the question as truthfully as possible using the provided context, and if the answer is not contained within the text below, say 'I don't know'
-Today, we are the 9 th of June 2023
-You will be answering questions from property managers who will be handling apartments, houses, and various types of properties. They will have inquiries regarding their tenants, rents, lease agreements, and more
-
-Here is a dataset about the locations :
-| id_appartment | date_entree | date_sortie |
-|----------------|--------------|--------------|
-| APT001 | 05/01/2022 | 15/02/2022 |
-| APT002 | 10/03/2022 | 20/04/2022 |
-| APT003 | 02/06/2022 | 30/06/2022 |
-| APT004 | 17/08/2022 | 25/09/2022 |
-| APT005 | 08/10/2022 | 12/11/2022 |
-| APT006 | 02/01/2023 | 20/02/2023 |
-| APT007 | 15/03/2023 | 30/04/2023 |
-| APT008 | 10/05/2023 | 18/06/2023 |
-| APT009 | 01/07/2023 | 10/08/2023 |
-| APT010 | 05/09/2023 | 22/10/2023 |
-| APT011 | 15/11/2023 | 31/12/2023 |
-| APT012 | 08/02/2024 | 25/03/2024 |
-
-Here is a dataset about the appartements :
-| id_appartment | appartment_name | appartment_address | rent | payment_delay | status|
-|---------------|--------------------|--------------------|------|---------------|
-| APT001 | Appartement Harmonie | 10 Rue du Château | 1057 | 729 | occupied|
-| APT002 | Résidence Serenity | 22 Avenue des Lilas | 1276 | 182 | unoccupied|
-| APT003 | Studio Élégance | 15 Rue de la Gare | 1814 | 555 | unoccupied |
-| APT004 | Cozy Haven | 5 Park Lane | 950 | 390 | occupied |
-| APT005 | Tranquil Retreat | 8 Meadow Street | 1320 | 920 | occupied |
-| APT006 | Urban Oasis | 17 High Rise Avenue | 1785 | 632 | occupied |
-| APT007 | Sunny Heights | 25 Sunshine Boulevard | 990 | 165 | unoccupied |
-| APT008 | Garden View | 12 Rose Lane | 1450 | 245 | unoccupied |
-| APT009 | City Loft | 9 Downtown Street | 1250 | 790 | occupied |
-| APT010 | Sea Breeze | 3 Ocean Avenue | 1890 | 420 | unoccupied |
-| APT011 | Mountain Retreat | 14 Alpine Drive | 1625 | 315 | unoccupied |
-| APT012 | Riverside Haven | 6 River Road | 1075 | 520 | occupied |
-| APT013 | Cosmopolitan Living | 21 City Center Square | 1360 | 270 | unoccupied |
-| APT014 | Quiet Hideaway | 11 Serene Lane | 1180 | 850 | occupied |
-| APT015 | Charming Cottage | 19 Elm Street | 950 | 120 | unoccupied |
-| APT016 | Lakeside Retreat | 7 Lakeview Avenue | 1740 | 410 | occupied |
-| APT017 | Modern Loft | 16 Urban Street | 1425 | 695 | occupied |
-| APT018 | Green Acres | 4 Meadow Lane | 1200 | 235 | unoccupied |
-| APT019 | Hilltop Haven | 13 Summit Drive | 1590 | 560 | occupied |
-| APT020 | Stylish Condo | 2 Chic Avenue | 1325 | 180 | unoccupied |
-| APT021 | Beachfront Paradise | 1 Shoreline Road | 1950 | 760 | occupied |
-| APT022 | Quaint Village House | 18 Cottage Lane | 1050 | 350 | unoccupied |
-| APT023 | Skyline View | 20 Tower Street | 1280 | 495 | occupied |
-you can link this two databases thanks to 'id_appartment"
-
-Here is a dataset about the tenants :
-| id_appartment | id_tenants|tenant_name | age | gender| family situation|
-|---------------|--------------------|--------------------|------|---------------|
-| APT001 | T001 | Pierre | 57 | man | married|
-| APT002 | T002|Paul | 22 | man | single |
-| APT003 | T003|Marie | 45 | woman | married |
+    st.session_state.system_message = f"""
+    You're a SQL developer able to generate all sql queries based only on this table, you should only send sql queries when possible, otherwise send null as message in all other cases.
+    You must enclose your sql script in a span tag
+    {formatted_string}
 """
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo")
+llm = ChatOpenAI(model_name="gpt-3.5-turbo") # type: ignore
 
 system_msg_template = SystemMessagePromptTemplate.from_template(template=st.session_state.system_message)
 
@@ -110,6 +78,7 @@ conversation = ConversationChain(
 )
 
 response_container = st.container()
+text_container = st.container()
 
 # ----- Pie
 options_pie = {
@@ -189,37 +158,88 @@ with st.sidebar:
     st.subheader("You can ask me any statistics you would like to get from your data.")
     st.write("I was created by true princesses : The Peaches :peach:")
     st.header("You ask :")
-    recorded_prompt1 = st.button("Quand se termine le contrat de l'appartement 22 Avenue des Lilas ?")
+    recorded_prompt_input = st.button("Demander une statistique à l'IA ")
+    recorded_prompt1 = st.button("Quand se termine le contrat de l'appartement 14 Rue Lecourbe ?")
     recorded_prompt2 = st.button("Quel est mon taux de vacance aujourd’hui ?")
-    fake_prompt1 = st.button("Fake: Quel est mon taux de vacance aujourd’hui ?")
     asked_question = st.button("Peux-tu me vendre du rêve ?")
+
+# ----- Inout ------
+# Fxn Make Execution
+def sql_executor(raw_code):
+	c.execute(raw_code)
+	data = c.fetchall()
+	return data
+# Quel est le top 5 des appartements avec le loyer le plus élevé ?
+
+def display_data(data):
+    result = re.search('<span>(.*?)</span>', data)
+    if result:
+        query_results = sql_executor(result.group(1))
+        st.header(f"La requête est isolée de la réponse:\n\n`{result.group(1)}`")
+        st.write("---")
+        st.header(f"La résultat de la requête sur la BDD")
+        st.json(query_results)
+        return query_results
+
+with response_container:
+    query = st.text_input("Rechercher dans Ublo: ", key="input_container")
+    if query:
+        with st.spinner("Recherche..."):
+            response = conversation.predict(
+                input=f"Query:\n{query}"
+            )
+            display_data(response)
 
 # ----- Graph ------
 with response_container:
     if recorded_prompt1:
-        st.session_state.query_input = "What is the end date date associated with the apartment at 22 Avenue des Lilas ?"
+        st.session_state.query_input = "Date_fin associated with the apartment that adresse_appartement is '14 Rue Lecourbe, 75015 Paris'"
+        st.title("Quand se termine le contrat de l'appartement 14 Rue Lecourbe ?")
         with st.spinner():
             response = conversation.predict(
                 input=f"Query:\n{st.session_state.query_input}"
             )
             st.session_state.response = response
-            st.title(st.session_state.response)
-    
+            display_data(response)
+
     if recorded_prompt2:
-        st.session_state.query_input = "How many appartments are occupied and unoccupied, answer simply with just a table."
+        st.session_state.query_input = "How many appartments are vacant and how many appartments are not vacant"
         with st.spinner():
             response = conversation.predict(
                 input=f"Query:\n{st.session_state.query_input}"
             )
             st.session_state.response = response
-            st.title(st.session_state.response)
-    
-    if fake_prompt1:
-        with st.spinner():
-            time.sleep(3)
-            st.success("Voici le taux de vacance de votre patrimoine aujourd'hui", icon="✅")
-            st_echarts(options=options_pie_fake, height="500px")
-        
+            st.title("Quel est mon taux de vacance aujourd’hui ?")
+            results = display_data(response)
+            if results :
+                st.write("---")
+                st.header("Graph: ")
+                st_echarts({
+                    "tooltip": {"trigger": "item"},
+                    "legend": {"top": "5%", "left": "center"},
+                    "series": [
+                        {
+                            "type": "pie",
+                            "radius": ["40%", "70%"],
+                            "avoidLabelOverlap": False,
+                            "itemStyle": {
+                                "borderRadius": 10,
+                                "borderColor": "#fff",
+                                "borderWidth": 2,
+                            },
+                            "label": {"show": False, "position": "center"},
+                            "emphasis": {
+                                "label": {"show": True, "fontSize": "40", "fontWeight": "bold"}
+                            },
+                            "labelLine": {"show": False},
+                            "data": [
+                                {"value": results[0][1], "name": "Lots occupés"},
+                                {"value": results[1][1], "name": "Lots vacants"},
+                            ],
+                        }
+                    ],
+                }  , height="500px")
+
     if asked_question:
         st.pydeck_chart(pdk.Deck(
             map_style=None,
