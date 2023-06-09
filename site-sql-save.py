@@ -30,8 +30,8 @@ if not os.path.exists(data_dir):
 # DB Mgmt
 import sqlite3 
 # conn = sqlite3.connect('data/world.sqlite')
-load_csv_to_sqlite('data/DATA2_Appartement.csv', 'appartement')
-conn = load_csv_to_sqlite('data/DATA2_Location.csv', 'location')
+load_csv_to_sqlite('data/Data Stat CSV - Appartement.csv', 'appartement')
+conn = load_csv_to_sqlite('data/Data Stat CSV - Location.csv', 'location')
 c = conn.cursor()
 
 
@@ -74,18 +74,7 @@ if "model" not in st.session_state:
 if "top_k" not in st.session_state:
     st.session_state.top_k = 2
 if "system_message" not in st.session_state:
-    st.session_state.system_message ="""
-        Today is: Thursday. June 8, 2023.
-        `id_appartement` is a foreign key between the two tables.
-        `surface_appartement` is the living area of an appartment in square meter.
-        `loyer_appartement` is the monthly rent in euros.
-        `nombre_locataires` is the number of renters for the corresponding appartement.
-        `date_debut` is the lease starting date.
-        `date_fin` is the lease end date.
-        If `vacant` is true, the appartment is occupied and available for new renters otherwise it is currently rented.
-        `impaye_locataire` is the current tenant debt in euros.
-        Answer the question as truthfully as possible, and if the answer is not contained within the text below, say 'I don't know'.
-    """
+    st.session_state.system_message = "Answer the question as truthfully as possible using the provided context, and if the answer is not contained within the text below, say 'I don't know'"
 
 with st.sidebar:
     model_select_value = st.selectbox("Model", ["gpt-3.5-turbo", "gpt-4"], key="model")
@@ -122,8 +111,13 @@ with text_container:
         with st.spinner("typing..."):
             conversation_string = get_conversation_string()
             # st.code(conversation_string)
+            refined_query = query_refiner(conversation_string, query)
+            st.subheader("Refined Query:")
+            st.write(refined_query)
+            context = search_context(refined_query)
+            # print(context)
             response = conversation.predict(
-                input=f"Query:\n{query}"
+                input=f"Context:\n {context} \n\n Query:\n{query}"
             )
         st.session_state.requests.append(query)
         st.session_state.responses.append(response)
